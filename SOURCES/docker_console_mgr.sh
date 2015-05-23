@@ -21,6 +21,7 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
         echo -ne "Credentials: "
         stty -echo
         read credentials
+        credentials=`echo "${credentials}" | sed -e 's?[^a-zA-Z0-9]??g'` 
         stty echo
     done
 

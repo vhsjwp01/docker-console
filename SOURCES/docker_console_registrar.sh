@@ -13,7 +13,7 @@ LOGFILE="/var/log/docker-console.log"
 err_msg=""
 exit_code=${SUCCESS}
 
-# WHAT: Prompt for ${credentials}:${container_id} tuple
+# WHAT: Prompt for ${username}:${password}:${container_id} triple
 # WHY:  Needed later
 #
 if [ ${exit_code} -eq ${SUCCESS} ]; then
@@ -23,9 +23,26 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
         echo -ne "Registration: "
         stty -echo
         read registration
+        registration=`echo "${registration}" | sed -e 's?[^a-zA-Z0-9]??g'`
         stty echo
     done
 
+fi
+
+# WHAT: Make sure we have three pieces of colon (:) delimited information
+# WHY:  Sanity
+#
+if [ ${exit_code} -eq ${SUCCESS} ]; then
+    let pieces_count=`echo "${registration}" | sed -e 's?:?\ ?g' | wc -w`
+
+    if [ ${pieces_count} -ne 3 ]; then
+        echo REGISTRATION-FAILED
+        err_msg="Not enough registration information provided"
+        exit_code=${ERROR}
+    else
+        userid=`echo "${registration}" | awk -F':' '{print $1}'`
+        password=`echo "${registration}" | awk -F':' '{print $2}'`
+    fi
 fi
 
 # WHAT: Make sure the container_id referenced in the registration credentials exist
@@ -62,10 +79,12 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
         err_msg="Cannot locate credentials file \"${credentials_file}\""
         exit_code=${ERROR}
     else
-        let is_present=`egrep -c "^${registration}$" "${credentials_file}"`
+        auth_hash=`echo "${userid}:${password}" | md5sum | awk '{print $1}'`
+        credentials="${auth_hash}:${this_container}"
+        let is_present=`egrep -c "^${credentials}$" "${credentials_file}"`
 
         if [ ${is_present} -eq 0 ]; then
-            echo "${registration}" >> "${credentials_file}"
+            echo "${credentials}" >> "${credentials_file}"
             echo REGISTRATION-SUCCESS
             echo "`date` - SUCCESS:  Registered console access for container ${this_container}" >> ${LOGFILE}
         else
