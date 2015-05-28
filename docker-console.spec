@@ -129,15 +129,15 @@ if [ ${docker_registrar_port_check} -eq 0 ]; then
     echo "%{docker_console_registrar_daemon_real_name}      %{docker_registrar_port}/tcp               # Simple Remote Docker Registrar" >> /etc/services
 fi
 chkconfig xinetd on
-chkconfig %{docker_console_daemon_real_name} on
-chkconfig %{docker_console_registrar_daemon_real_name} on
+chkconfig %{xinetd_console_mgr_real_name} on
+chkconfig %{xinetd_registrar_mgr_real_name} on
 service xinetd restart > /dev/null 2>&1
 service crontab restart > /dev/null 2>&1
 /bin/true
 
 %postun
-chkconfig %{docker_console_daemon_real_name} off > /dev/null 2>&1
-chkconfig %{docker_console_registrar_daemon_real_name} off > /dev/null 2>&1
+chkconfig %{xinetd_console_mgr_real_name} off > /dev/null 2>&1
+chkconfig %{xinetd_registrar_mgr_real_name} off > /dev/null 2>&1
 sed -e "/Docker Console Registration Cleansing/d" /var/spool/cron/root
 let docker_console_port_check=`egrep "Simple Remote Docker Console" /etc/services | wc -l | awk '{print $1}'`
 let docker_registrar_port_check=`egrep "Simple Remote Docker Registrar" /etc/services | wc -l | awk '{print $1}'`
