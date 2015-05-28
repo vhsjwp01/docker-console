@@ -35,13 +35,13 @@ fi
 if [ ${exit_code} -eq ${SUCCESS} ]; then
     let pieces_count=`echo "${registration}" | sed -e 's?:?\ ?g' | wc -w`
 
-    if [ ${pieces_count} -ne 3 ]; then
+    if [ ${pieces_count} -ne 2 ]; then
         echo REGISTRATION-FAILED
-        err_msg="Not enough registration information provided"
+        err_msg="Incorrect registration information provided"
         exit_code=${ERROR}
     else
-        userid=`echo "${registration}" | awk -F':' '{print $1}'`
-        password=`echo "${registration}" | awk -F':' '{print $2}'`
+        auth_hash=`echo "${registration}" | awk -F':' '{print $1}'`
+        container_id=`echo "${registration}" | awk -F':' '{print $2}'`
     fi
 fi
 
@@ -49,13 +49,12 @@ fi
 # WHY:  To keep credentials list sane
 #
 if [ ${exit_code} -eq ${SUCCESS} ]; then
-    this_container=`echo "${registration}" | awk -F':' '{print $NF}'`
     running_containers=`docker ps -f status=running | egrep -v "^CONTAINER" | awk '{print $1}'`
 
     for running_container in ${running_containers} ; do
         container_match=""
 
-        if [ "${this_container}" = "${running_container}" ]; then
+        if [ "${container_id}" = "${running_container}" ]; then
             container_match="yes"
         fi
 
@@ -63,7 +62,7 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
 
     if [ "${container_match}" = "" ]; then
         echo REGISTRATION-FAILED
-        err_msg="No such running container ID \"${this_container}\""
+        err_msg="No such running container ID \"${container_id}\""
         exit_code=${ERROR}
     fi
 
@@ -79,17 +78,15 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
         err_msg="Cannot locate credentials file \"${credentials_file}\""
         exit_code=${ERROR}
     else
-        auth_hash=`echo "${userid}:${password}" | md5sum | awk '{print $1}'`
-        credentials="${auth_hash}:${this_container}"
-        let is_present=`egrep -c "^${credentials}$" "${credentials_file}"`
+        let is_present=`egrep -c "^${registration}$" "${credentials_file}"`
 
         if [ ${is_present} -eq 0 ]; then
-            echo "${credentials}" >> "${credentials_file}"
+            echo "${registration}" >> "${credentials_file}"
             echo REGISTRATION-SUCCESS
-            echo "`date` - SUCCESS:  Registered console access for container ${this_container}" >> ${LOGFILE}
+            echo "`date` - SUCCESS:  Registered console access for container ${container_id}" >> ${LOGFILE}
         else
             echo ALREADY-REGISTERED
-            echo "`date` - NOTICE:  Received request for previously registered container ${this_container}" >> ${LOGFILE}
+            echo "`date` - NOTICE:  Received request for previously registered container ${container_id}" >> ${LOGFILE}
         fi
 
     fi
