@@ -138,7 +138,7 @@ service crontab restart > /dev/null 2>&1
 %postun
 chkconfig %{xinetd_console_mgr_real_name} off > /dev/null 2>&1
 chkconfig %{xinetd_registrar_mgr_real_name} off > /dev/null 2>&1
-sed -e "/Docker Console Registration Cleansing/d" /var/spool/cron/root
+sed -i -e "/Docker Console Registration Cleansing/d" /var/spool/cron/root
 let docker_console_port_check=`egrep "Simple Remote Docker Console" /etc/services | wc -l | awk '{print $1}'`
 let docker_registrar_port_check=`egrep "Simple Remote Docker Registrar" /etc/services | wc -l | awk '{print $1}'`
 if [ ${docker_console_port_check} -gt 0 ]; then
