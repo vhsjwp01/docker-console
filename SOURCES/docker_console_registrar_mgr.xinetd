@@ -1,0 +1,12 @@
+# default: off
+# description: The docker console registrar mgr server registers remote docker console access
+service docker-console-registrar-mgr
+{
+	disable	= yes
+	flags		= IPv6
+	socket_type     = stream
+	wait            = no
+	user            = root
+	server          = /usr/local/sbin/docker-console-registrar-mgr
+	log_on_failure  += USERID
+}

@@ -39,39 +39,51 @@ Requires: docker-io
 %define install_base /usr/local
 %define install_bin_dir %{install_base}/bin
 %define install_sbin_dir %{install_base}/sbin
+
 %define docker_registrar_port 42001
 %define docker_console_port 42002
-%define console_real_name docker-console
-%define console_mgr_real_name docker_console_mgr
-%define registrar_real_name docker_console_registrar
-%define registrar_cleanup_real_name docker_registrar_cleanup
-%define xinetd_mgr_real_name docker-console
-%define xinetd_registrar_real_name docker-console-registrar
 
-Source0: ~/rpmbuild/SOURCES/docker-console.sh
-Source1: ~/rpmbuild/SOURCES/docker_console_mgr.sh
-Source2: ~/rpmbuild/SOURCES/docker_console_registrar.sh
-Source3: ~/rpmbuild/SOURCES/docker-console.xinetd
-Source4: ~/rpmbuild/SOURCES/docker-console-registrar.xinetd
-Source5: ~/rpmbuild/SOURCES/docker_registrar_cleanup.sh
+%define docker_console_real_name docker-console
+%define docker_console_registrar_real_name docker-console-registrar
+
+%define xinetd_console_mgr_real_name docker_console_mgr
+%define xinetd_registrar_mgr_real_name docker_console_registrar_mgr
+
+%define cron_registrar_cleanup_real_name docker-registrar-cleanup
+
+%define docker_console_daemon_real_name docker-console-mgr
+%define docker_console_registrar_daemon_real_name docker-console-registrar-mgr
+
+Source0: ~/rpmbuild/SOURCES/docker-console
+Source1: ~/rpmbuild/SOURCES/docker-console-registrar
+
+Source2: ~/rpmbuild/SOURCES/docker-console-mgr.sh
+Source3: ~/rpmbuild/SOURCES/docker-console-registrar-mgr.sh
+
+Source4: ~/rpmbuild/SOURCES/docker_console_mgr.xinetd
+Source5: ~/rpmbuild/SOURCES/docker_console_registrar_mgr.xinetd
+
+Source6: ~/rpmbuild/SOURCES/docker-registrar-cleanup.sh
 
 %description
 Docker-console is a client-server application to allow remote console
 access to a running docker container.  An xinetd daemon responds to queries
-passed by a client side tool called docker-console
+passed by a client side tool called docker-console.  A separate xinetd service
+registers username/password hashes and assoiates them with a container id.
 
 %install
 rm -rf %{buildroot}
 # Populate %{buildroot}
 mkdir -p %{buildroot}%{install_bin_dir}
-cp %{SOURCE0} %{buildroot}%{install_bin_dir}/%{console_real_name}
+cp %{SOURCE0} %{buildroot}%{install_bin_dir}/%{docker_console_real_name}
+cp %{SOURCE1} %{buildroot}%{install_bin_dir}/%{docker_console_registrar_real_name}
 mkdir -p %{buildroot}%{install_sbin_dir}
-cp %{SOURCE1} %{buildroot}%{install_sbin_dir}/%{console_mgr_real_name}
-cp %{SOURCE2} %{buildroot}%{install_sbin_dir}/%{registrar_real_name}
-cp %{SOURCE5} %{buildroot}%{install_sbin_dir}/%{registrar_cleanup_real_name}
+cp %{SOURCE2} %{buildroot}%{install_sbin_dir}/%{docker_console_daemon_real_name}
+cp %{SOURCE3} %{buildroot}%{install_sbin_dir}/%{docker_console_registrar_daemon_real_name}
+cp %{SOURCE6} %{buildroot}%{install_sbin_dir}/%{cron_registrar_cleanup_real_name}
 mkdir -p %{buildroot}/etc/xinetd.d
-cp %{SOURCE3} %{buildroot}/etc/xinetd.d/%{xinetd_mgr_real_name}
-cp %{SOURCE4} %{buildroot}/etc/xinetd.d/%{xinetd_registrar_real_name}
+cp %{SOURCE4} %{buildroot}/etc/xinetd.d/%{xinetd_console_mgr_real_name}
+cp %{SOURCE5} %{buildroot}/etc/xinetd.d/%{xinetd_registrar_mgr_real_name}
 
 # Build packaging manifest
 rm -rf /tmp/MANIFEST.%{name}* > /dev/null 2>&1
@@ -99,33 +111,33 @@ chmod 666 /tmp/MANIFEST.%{name}
 
 %post
 echo "# Docker Console Registration Cleansing" >> /var/spool/cron/root
-echo "0 30 * * * ( /usr/local/sbin/docker_registrar_cleanup 2>&1 | logger -t "Docker Console Registration Cleansing" )" >> /var/spool/cron/root
-chown root:docker %{install_sbin_dir}/%{console_mgr_real_name}
-chmod 750 %{install_sbin_dir}/%{console_mgr_real_name}
-chown root:docker %{install_sbin_dir}/%{registrar_real_name}
-chmod 750 %{install_sbin_dir}/%{registrar_real_name}
-chown root:docker %{install_sbin_dir}/%{registrar_cleanup_real_name}
-chmod 750 %{install_sbin_dir}/%{registrar_cleanup_real_name}
-chown root:docker %{install_bin_dir}/%{console_real_name}
-chmod 750 %{install_bin_dir}/%{console_real_name}
+echo "0 30 * * * ( %{install_sbin_dir}/%{cron_registrar_cleanup_real_name} 2>&1 | logger -t \"Docker Console Registration Cleansing\" )" >> /var/spool/cron/root
+for i in %{docker_console_daemon_real_name} %{docker_console_registrar_daemon_real_name} %{cron_registrar_cleanup_real_name} ; do
+    chown root:docker %{install_sbin_dir}/${i}
+    chmod 750 %{install_sbin_dir}/${i}
+done
+for i in %{docker_console_real_name} %{docker_console_registrar_real_name} ; do
+    chown root:docker %{install_bin_dir}/${i}
+    chmod 750 %{install_bin_dir}/${i}
+done
 let docker_console_port_check=`egrep "Simple Remote Docker Console" /etc/services | wc -l | awk '{print $1}'`
 let docker_registrar_port_check=`egrep "Simple Remote Docker Registrar" /etc/services | wc -l | awk '{print $1}'`
 if [ ${docker_console_port_check} -eq 0 ]; then
-    echo "%{xinetd_mgr_real_name}      %{docker_console_port}/tcp               # Simple Remote Docker Console" >> /etc/services
+    echo "%{docker_console_daemon_real_name}      %{docker_console_port}/tcp               # Simple Remote Docker Console" >> /etc/services
 fi
 if [ ${docker_registrar_port_check} -eq 0 ]; then
-    echo "%{xinetd_registrar_real_name}      %{docker_registrar_port}/tcp               # Simple Remote Docker Registrar" >> /etc/services
+    echo "%{docker_console_registrar_daemon_real_name}      %{docker_registrar_port}/tcp               # Simple Remote Docker Registrar" >> /etc/services
 fi
 chkconfig xinetd on
-chkconfig %{xinetd_mgr_real_name} on
-chkconfig %{xinetd_registrar_real_name} on
+chkconfig %{docker_console_daemon_real_name} on
+chkconfig %{docker_console_registrar_daemon_real_name} on
 service xinetd restart > /dev/null 2>&1
 service crontab restart > /dev/null 2>&1
 /bin/true
 
 %postun
-chkconfig %{xinetd_mgr_real_name} off > /dev/null 2>&1
-chkconfig %{xinetd_registrar_real_name} off > /dev/null 2>&1
+chkconfig %{docker_console_daemon_real_name} off > /dev/null 2>&1
+chkconfig %{docker_console_registrar_daemon_real_name} off > /dev/null 2>&1
 sed -e "/Docker Console Registration Cleansing/d" /var/spool/cron/root
 let docker_console_port_check=`egrep "Simple Remote Docker Console" /etc/services | wc -l | awk '{print $1}'`
 let docker_registrar_port_check=`egrep "Simple Remote Docker Registrar" /etc/services | wc -l | awk '{print $1}'`

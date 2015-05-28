@@ -1,0 +1,12 @@
+# default: off
+# description: The docker console mgr server allows remote docker console access
+service docker-console-mgr
+{
+	disable	= yes
+	flags		= IPv6
+	socket_type     = stream
+	wait            = no
+	user            = root
+	server          = /usr/local/sbin/docker-console-mgr
+	log_on_failure  += USERID
+}
