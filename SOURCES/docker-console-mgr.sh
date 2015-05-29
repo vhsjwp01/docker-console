@@ -19,13 +19,15 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
 
     # Read in username
     while [ "${username}" = "" ]; do
-        read -p "Username: " username
+        echo -ne "Username: "
+        read username
         username=`echo "${username}" | sed -e 's?[^a-zA-Z0-9]??g'` 
     done
 
     # Read in password
     while [ "${password}" = "" ]; do
-        read -p "Password: " password
+        echo -ne "Password: "
+        read password
         password=`echo "${password}" | sed -e 's?[^a-zA-Z0-9]??g'` 
     done
 
@@ -42,7 +44,7 @@ fi
 # WHY:  Asked to
 #
 if [ ${exit_code} -eq ${SUCCESS} ]; then
-    credentials_file="/usr/local/etc/docker_console/credentials"
+    credentials_file="/etc/docker_console.creds"
 
     if [ ! -e "${credentials_file}" ]; then
         err_msg="Cannot locate credentials file \"${credentials_file}\""
@@ -91,7 +93,8 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
         done
 
         echo
-        read -p "    Select a container ID number: " selection
+        echo -ne "    Select a container ID number: "
+        read selection
         selection=`echo "${selection}" | sed -e 's/[^0-9]//g'`
 
         if [ "${selection}" = "" ]; then
