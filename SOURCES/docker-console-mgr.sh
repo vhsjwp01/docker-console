@@ -17,13 +17,24 @@ exit_code=${SUCCESS}
 if [ ${exit_code} -eq ${SUCCESS} ]; then
     credentials=""
 
-    while [ "${credentials}" = "" ]; do
-        echo -ne "Credentials: "
-        stty -echo
-        read credentials
-        credentials=`echo "${credentials}" | sed -e 's?[^a-zA-Z0-9]??g'` 
-        stty echo
+    # Read in username
+    while [ "${username}" = "" ]; do
+        read -p "Username: " username
+        username=`echo "${username}" | sed -e 's?[^a-zA-Z0-9]??g'` 
     done
+
+    # Read in password
+    while [ "${password}" = "" ]; do
+        read -p "Password: " password
+        password=`echo "${password}" | sed -e 's?[^a-zA-Z0-9]??g'` 
+    done
+
+    credentials=`echo "${username}:${password}" | md5sum | awk '{print $1}'`
+
+    if [ "${credentials}" = "" ]; then
+        err_msg="No credentials entered"
+        exit_code=${ERROR}
+    fi
 
 fi
 
