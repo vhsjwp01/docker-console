@@ -11,6 +11,10 @@ ERROR=1
 err_msg=""
 exit_code=${SUCCESS}
 
+session_id=$$
+
+trap "if [ -e \"/tmp/docker-console.${session_id}\" ]; then rm -rf \"/tmp/docker-console.${session_id}\" ; fi" 0 1 2 3 15
+
 # WHAT: Find out who the requestor is
 # WHY:  Needed later
 #
@@ -105,7 +109,12 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
     done
 
     # Connect to a docker console
-    docker exec -it `echo "${container_id[$selection]}" | awk -F':' '{print $1}'` /bin/bash
+    console_session=`echo "${container_id[$selection]}" | awk -F':' '{print $1}'`
+    echo '#!/bin/bash'                                                               > "/tmp/docker-console.${session_id}"
+    echo "PATH=/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin"        >> "/tmp/docker-console.${session_id}"
+    echo "export TERM PATH"                                                         >> "/tmp/docker-console.${session_id}"
+    echo "docker exec -it \"${console_session}\" /bin/bash"                         >> "/tmp/docker-console.${session_id}"
+    eval python -c 'import pty; pty.spawn("/tmp/docker-console.${session_id}")'
 fi
 
 # WHAT: Complain if necessary, then exit
