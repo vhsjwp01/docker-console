@@ -32,6 +32,8 @@ Requires: gawk
 Requires: nc
 Requires: sed
 Requires: xinetd
+Requires: /usr/bin/python
+Requires: coreutils
 
 # These Requires can be found in EPEL
 Requires: docker-io
