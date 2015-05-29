@@ -39,31 +39,24 @@ Requires: docker-io
 %define install_base /usr/local
 %define install_bin_dir %{install_base}/bin
 %define install_sbin_dir %{install_base}/sbin
-
 %define docker_registrar_port 42001
 %define docker_console_port 42002
-
 %define docker_console_real_name docker-console
 %define docker_console_registrar_real_name docker-console-registrar
-
 %define xinetd_console_mgr_real_name docker_console_mgr
 %define xinetd_registrar_mgr_real_name docker_console_registrar_mgr
-
 %define cron_registrar_cleanup_real_name docker-registrar-cleanup
-
 %define docker_console_daemon_real_name docker-console-mgr
 %define docker_console_registrar_daemon_real_name docker-console-registrar-mgr
 
 Source0: ~/rpmbuild/SOURCES/docker-console
 Source1: ~/rpmbuild/SOURCES/docker-console-registrar
-
 Source2: ~/rpmbuild/SOURCES/docker-console-mgr.sh
 Source3: ~/rpmbuild/SOURCES/docker-console-registrar-mgr.sh
-
 Source4: ~/rpmbuild/SOURCES/docker_console_mgr.xinetd
 Source5: ~/rpmbuild/SOURCES/docker_console_registrar_mgr.xinetd
-
 Source6: ~/rpmbuild/SOURCES/docker-registrar-cleanup.sh
+Source7: ~/rpmbuild/SOURCES/docker_console.creds
 
 %description
 Docker-console is a client-server application to allow remote console
@@ -84,6 +77,7 @@ cp %{SOURCE6} %{buildroot}%{install_sbin_dir}/%{cron_registrar_cleanup_real_name
 mkdir -p %{buildroot}/etc/xinetd.d
 cp %{SOURCE4} %{buildroot}/etc/xinetd.d/%{xinetd_console_mgr_real_name}
 cp %{SOURCE5} %{buildroot}/etc/xinetd.d/%{xinetd_registrar_mgr_real_name}
+cp %{SOURCE7} %{buildroot}/etc
 
 # Build packaging manifest
 rm -rf /tmp/MANIFEST.%{name}* > /dev/null 2>&1
@@ -128,6 +122,7 @@ fi
 if [ ${docker_registrar_port_check} -eq 0 ]; then
     echo "%{docker_console_registrar_daemon_real_name}      %{docker_registrar_port}/tcp               # Simple Remote Docker Registrar" >> /etc/services
 fi
+chmod 600 /etc/docker_console.creds
 chkconfig xinetd on
 chkconfig %{xinetd_console_mgr_real_name} on
 chkconfig %{xinetd_registrar_mgr_real_name} on

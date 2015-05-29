@@ -1,0 +1,3 @@
+# Docker console credentials file
+# Entries are of the form:
+# <md5 hash>:<container ID>

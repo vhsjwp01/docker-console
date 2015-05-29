@@ -21,10 +21,10 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
 
     while [ "${registration}" = "" ]; do
         echo -ne "Registration: "
-        stty -echo
+#        stty -echo
         read registration
-        registration=`echo "${registration}" | sed -e 's?[^a-zA-Z0-9]??g'`
-        stty echo
+        registration=`echo "${registration}" | sed -e 's?[^a-zA-Z0-9:]??g'`
+#        stty echo
     done
 
 fi
@@ -72,6 +72,7 @@ fi
 # WHY:  Asked to
 #
 if [ ${exit_code} -eq ${SUCCESS} ]; then
+    credentials_file="/etc/docker_console.creds"
 
     if [ ! -e "${credentials_file}" ]; then
         echo REGISTRATION-FAILED
