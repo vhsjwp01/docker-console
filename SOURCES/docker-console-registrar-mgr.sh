@@ -49,18 +49,9 @@ fi
 # WHY:  To keep credentials list sane
 #
 if [ ${exit_code} -eq ${SUCCESS} ]; then
-    running_containers=`docker ps -f status=running | egrep -v "^CONTAINER" | awk '{print $1}'`
+    let is_running=`docker ps -f status=running | awk '{print $1}' | egrep -c "^${container_id}$"`
 
-    for running_container in ${running_containers} ; do
-        container_match=""
-
-        if [ "${container_id}" = "${running_container}" ]; then
-            container_match="yes"
-        fi
-
-    done
-
-    if [ "${container_match}" = "" ]; then
+    if [ ${is_running} -eq 0 ]; then
         echo REGISTRATION-FAILED
         err_msg="No such running container ID \"${container_id}\""
         exit_code=${ERROR}
