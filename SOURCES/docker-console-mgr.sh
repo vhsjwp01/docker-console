@@ -8,17 +8,23 @@ export TERM PATH
 SUCCESS=0
 ERROR=1
 
+LOGFILE="/var/log/docker-console.log"
+
 err_msg=""
 exit_code=${SUCCESS}
 
 session_id=$$
 
-trap "if [ -e \"/tmp/docker-console.${session_id}\" ]; then rm -rf \"/tmp/docker-console.${session_id}\" ; fi" 0 1 2 3 15
+trap "if [ -e \"/tmp/docker-console.${session_id}\" ]; then rm -rf \"/tmp/docker-console.${session_id}\" ; echo \"`date` - REMOTE HOST: ${REMOTE_HOST} - docker-console client disconnected, PID ${session_id}\" >> ${LOGFILE} ; fi" 0 1 2 3 15
 
 # WHAT: Find out who the requestor is
 # WHY:  Needed later
 #
 if [ ${exit_code} -eq ${SUCCESS} ]; then
+
+    # Firstly, log this connection
+    echo "`date` - REMOTE HOST: ${REMOTE_HOST} - docker-console client connected, PID ${session_id}" >> ${LOGFILE}
+    
     credentials=""
 
     # Read in username
@@ -115,6 +121,7 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
     echo "export TERM PATH"                                                  >> "/tmp/docker-console.${session_id}"
     echo "docker exec -it \"${console_session}\" /bin/bash"                  >> "/tmp/docker-console.${session_id}"
     chmod 500 "/tmp/docker-console.${session_id}"
+    echo "`date` - REMOTE HOST: ${REMOTE_HOST} - Docker Console Manager attached to container ${console_session} console, PID ${session_id}" >> ${LOGFILE}
     eval "python -c 'import pty; pty.spawn(\"/tmp/docker-console.${session_id}\")'"
 fi
 
@@ -124,7 +131,7 @@ fi
 if [ ${exit_code} -ne ${SUCCESS} ]; then
 
     if [ "${err_msg}" != "" ]; then
-        echo "    ERROR:  ${err_msg} ... processing halted"
+        echo "`date` - REMOTE HOST: ${REMOTE_HOST} - ERROR:  ${err_msg} ... Docker Console Manager processing halted, PID ${session_id}" >> ${LOGFILE}
     fi
 
 fi

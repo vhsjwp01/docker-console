@@ -13,18 +13,24 @@ LOGFILE="/var/log/docker-console.log"
 err_msg=""
 exit_code=${SUCCESS}
 
-# WHAT: Prompt for ${username}:${password}:${container_id} triple
+session_id=$$
+
+trap "echo \"`date` - REMOTE HOST: ${REMOTE_HOST} - docker-console-registrar client disconnected, PID ${session_id}\" >> ${LOGFILE}" 0 1 2 3 15
+
+# WHAT: Prompt for ${username}+${password}:${container_id} tuple
 # WHY:  Needed later
 #
 if [ ${exit_code} -eq ${SUCCESS} ]; then
+
+    # Firstly, log this connection
+    echo "`date` - REMOTE HOST: ${REMOTE_HOST} - docker-console-registrar client connected, PID ${session_id}" >> ${LOGFILE}
+
     registration=""
 
     while [ "${registration}" = "" ]; do
         echo -ne "Registration: "
-#        stty -echo
         read registration
         registration=`echo "${registration}" | sed -e 's?[^a-zA-Z0-9:]??g'`
-#        stty echo
     done
 
 fi
@@ -75,10 +81,10 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
         if [ ${is_present} -eq 0 ]; then
             echo "${registration}" >> "${credentials_file}"
             echo REGISTRATION-SUCCESS
-            echo "`date` - SUCCESS:  Registered console access for container ${container_id}" >> ${LOGFILE}
+            echo "`date` - REMOTE HOST: ${REMOTE_HOST} - SUCCESS:  Docker Consle Registrar Manager registered console access for container ${container_id}, PID ${session_id}" >> ${LOGFILE}
         else
             echo ALREADY-REGISTERED
-            echo "`date` - NOTICE:  Received request for previously registered container ${container_id}" >> ${LOGFILE}
+            echo "`date` - REMOTE HOST: ${REMOTE_HOST} - NOTICE:  Docker Console Registrar Manager received request for previously registered container ${container_id}, PID ${session_id}" >> ${LOGFILE}
         fi
 
     fi
@@ -91,7 +97,7 @@ fi
 if [ ${exit_code} -ne ${SUCCESS} ]; then
 
     if [ "${err_msg}" != "" ]; then
-        echo "`date` - ERROR:  ${err_msg} ... processing halted" >> ${LOGFILE}
+        echo "`date` - REMOTE HOST: ${REMOTE_HOST} - ERROR:  ${err_msg} ... Docker Console Registrar Manager processing halted, PID ${session_id}" >> ${LOGFILE}
     fi
 
 fi
