@@ -31,7 +31,7 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
         done
 
         if [ "${container_match}" = "" ]; then
-            sed -e "/:${running_container}$/d" "${credentials_file}"
+            sed -i -e "/:${running_container}\$/d" "${credentials_file}"
         fi
 
     done
