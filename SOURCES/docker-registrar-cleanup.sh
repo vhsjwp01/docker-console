@@ -8,6 +8,8 @@ export TERM PATH
 SUCCESS=0
 ERROR=1
 
+LOGFILE="/var/log/docker-console.log"
+
 err_msg=""
 exit_code=${SUCCESS}
 
@@ -31,6 +33,7 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
         done
 
         if [ "${container_match}" = "" ]; then
+            echo "`date` - NOTICE - Expunging credentials for dead container id ${running_container} from ${credentials_file}" >> ${LOGFILE}
             sed -i -e "/:${running_container}\$/d" "${credentials_file}"
         fi
 
