@@ -41,3 +41,4 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
 
 fi
 
+exit ${exit_code}
