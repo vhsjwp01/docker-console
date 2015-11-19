@@ -9,7 +9,7 @@
 
 Summary: A simple client-server method to register docker container console access
 Name: docker-console
-Release: 1.0-1.EL%{distro_major_ver}
+Release: 1.1.EL%{distro_major_ver}
 License: GNU
 Group: Docker/Management
 BuildRoot: %{_tmppath}/%{name}-root
