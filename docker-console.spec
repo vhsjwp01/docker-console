@@ -36,7 +36,7 @@ Requires: /usr/bin/python
 Requires: coreutils
 
 # These Requires can be found in EPEL
-Requires: docker-io
+Requires: /usr/bin/docker
 
 %define install_base /usr/local
 %define install_bin_dir %{install_base}/bin
@@ -107,7 +107,7 @@ chmod 666 /tmp/MANIFEST.%{name}
 
 %post
 echo "# Docker Console Registration Cleansing" >> /var/spool/cron/root
-echo "0 30 * * * ( %{install_sbin_dir}/%{cron_registrar_cleanup_real_name} 2>&1 | logger -t \"Docker Console Registration Cleansing\" )" >> /var/spool/cron/root
+echo "30 0 * * * ( %{install_sbin_dir}/%{cron_registrar_cleanup_real_name} 2>&1 | logger -t \"Docker Console Registration Cleansing\" )" >> /var/spool/cron/root
 for i in %{docker_console_daemon_real_name} %{docker_console_registrar_daemon_real_name} %{cron_registrar_cleanup_real_name} ; do
     chown root:docker %{install_sbin_dir}/${i}
     chmod 750 %{install_sbin_dir}/${i}
