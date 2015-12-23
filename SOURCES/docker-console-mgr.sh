@@ -118,7 +118,8 @@ if [ ${exit_code} -eq ${SUCCESS} ]; then
     console_session=`echo "${container_id[$selection]}" | awk -F':' '{print $1}'`
     echo '#!/bin/bash'                                                        > "/tmp/docker-console.${session_id}"
     echo "PATH=/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin" >> "/tmp/docker-console.${session_id}"
-    echo "export TERM PATH"                                                  >> "/tmp/docker-console.${session_id}"
+    echo "TMOUT=1800"                                                        >> "/tmp/docker-console.${session_id}"
+    echo "export PATH TERM TMOUT"                                            >> "/tmp/docker-console.${session_id}"
     echo "docker exec -it \"${console_session}\" /bin/bash"                  >> "/tmp/docker-console.${session_id}"
     chmod 500 "/tmp/docker-console.${session_id}"
     echo "`date` - REMOTE HOST: ${REMOTE_HOST} - Docker Console Manager attached to container ${console_session} console, PID ${session_id}" >> ${LOGFILE}

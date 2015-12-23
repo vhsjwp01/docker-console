@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+#set -x
 
 PATH=/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin
 TERM=vt100
@@ -15,16 +15,24 @@ exit_code=${SUCCESS}
 # WHY:  Asked to
 #
 if [ ${exit_code} -eq ${SUCCESS} ]; then
-    credentials_file="/etc/docker_console.creds"
-    registered_containers=$(egrep -v "^#" "${credentials_file}" | awk -F':' '{print $NF}')
-    running_containers=$(docker ps -f status=running | egrep -v "^CONTAINER" | awk '{print $1}')
+    credentials_file="/etc/docker_console.creds2"
+    registered_containers=`egrep -v "^#" "${credentials_file}" | awk -F':' '{print $NF}' | sort -u`
+    running_containers=`docker ps -f status=running | egrep -v "^CONTAINER" | awk '{print $1}' | sort -u`
 
     for registered_container in ${registered_containers} ; do
-        let container_match=$(echo "${running_containers}" | egrep -c "^${registered_container}$")
+        container_match=""
 
-        if [ ${container_match} -eq 0 ]; then
-            sed -i -e "/^.*:${registered_container}$/d" "${credentials_file}"
-            #echo "sed -i -e \"/^.*:${registered_container}$/d\" \"${credentials_file}\""
+        for running_container in ${running_containers} ; do
+
+            if [ "${registered_container}" = "${running_container}" ]; then
+                container_match="yes"
+                break
+            fi
+
+        done
+
+        if [ "${container_match}" = "" ]; then
+            sed -i -e "/:${registered_container}$/d" "${credentials_file}"
         fi
 
     done
