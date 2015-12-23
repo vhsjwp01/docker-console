@@ -15,7 +15,7 @@ exit_code=${SUCCESS}
 # WHY:  Asked to
 #
 if [ ${exit_code} -eq ${SUCCESS} ]; then
-    credentials_file="/etc/docker_console.creds2"
+    credentials_file="/etc/docker_console.creds"
     registered_containers=`egrep -v "^#" "${credentials_file}" | awk -F':' '{print $NF}' | sort -u`
     running_containers=`docker ps -f status=running | egrep -v "^CONTAINER" | awk '{print $1}' | sort -u`
 
