@@ -9,7 +9,7 @@
 
 Summary: A simple client-server method to register docker container console access
 Name: docker-console
-Release: 2.3.EL%{distro_major_ver}
+Release: 2.4.EL%{distro_major_ver}
 License: GNU
 Group: Docker/Management
 BuildRoot: %{_tmppath}/%{name}-root
@@ -61,7 +61,7 @@ Source6: ~/rpmbuild/SOURCES/docker-registrar-cleanup.sh
 Source7: ~/rpmbuild/SOURCES/docker_console.creds
 
 %description
-Docker-console is a client-server application to allow remote console
+Docker-console is a client-server application that allows remote console
 access to a running docker container.  An xinetd daemon responds to queries
 passed by a client side tool called docker-console.  A separate xinetd service
 registers username/password hashes and assoiates them with a container id.
@@ -106,8 +106,11 @@ rm -f /tmp/MANIFEST.%{name}.tmp
 chmod 666 /tmp/MANIFEST.%{name}
 
 %post
-echo "# Docker Console Registration Cleansing" >> /var/spool/cron/root
-echo "0 30 * * * ( %{install_sbin_dir}/%{cron_registrar_cleanup_real_name} 2>&1 | logger -t \"Docker Console Registration Cleansing\" )" >> /var/spool/cron/root
+# Only run this on installation
+if [ "${1}" = "1" ]; then
+    echo "# Docker Console Registration Cleansing" >> /var/spool/cron/root
+    echo "0 30 * * * ( %{install_sbin_dir}/%{cron_registrar_cleanup_real_name} 2>&1 | logger -t \"Docker Console Registration Cleansing\" )" >> /var/spool/cron/root
+fi
 for i in %{docker_console_daemon_real_name} %{docker_console_registrar_daemon_real_name} %{cron_registrar_cleanup_real_name} ; do
     chown root:docker %{install_sbin_dir}/${i}
     chmod 750 %{install_sbin_dir}/${i}
@@ -133,23 +136,26 @@ service crontab restart > /dev/null 2>&1
 /bin/true
 
 %postun
-chkconfig %{xinetd_console_mgr_real_name} off > /dev/null 2>&1
-chkconfig %{xinetd_registrar_mgr_real_name} off > /dev/null 2>&1
-sed -i -e "/Docker Console Registration Cleansing/d" /var/spool/cron/root
-let docker_console_port_check=`egrep "Simple Remote Docker Console" /etc/services | wc -l | awk '{print $1}'`
-let docker_registrar_port_check=`egrep "Simple Remote Docker Registrar" /etc/services | wc -l | awk '{print $1}'`
-if [ ${docker_console_port_check} -gt 0 ]; then
-    cp -p /etc/services /tmp/services.$$
-    egrep -v "Simple Remote Docker Console" /tmp/services.$$ > /etc/services
-    rm -f /tmp/services.$$
+# Only run this on uninstallation
+if [ "${1}" = "0" ]; then
+    chkconfig %{xinetd_console_mgr_real_name} off > /dev/null 2>&1
+    chkconfig %{xinetd_registrar_mgr_real_name} off > /dev/null 2>&1
+    sed -i -e "/Docker Console Registration Cleansing/d" /var/spool/cron/root
+    let docker_console_port_check=`egrep "Simple Remote Docker Console" /etc/services | wc -l | awk '{print $1}'`
+    let docker_registrar_port_check=`egrep "Simple Remote Docker Registrar" /etc/services | wc -l | awk '{print $1}'`
+    if [ ${docker_console_port_check} -gt 0 ]; then
+        cp -p /etc/services /tmp/services.$$
+        egrep -v "Simple Remote Docker Console" /tmp/services.$$ > /etc/services
+        rm -f /tmp/services.$$
+    fi
+    if [ ${docker_registrar_port_check} -gt 0 ]; then
+        cp -p /etc/services /tmp/services.$$
+        egrep -v "Simple Remote Docker Registrar" /tmp/services.$$ > /etc/services
+        rm -f /tmp/services.$$
+    fi
+    service xinetd restart > /dev/null 2>&1
+    service crontab restart > /dev/null 2>&1
 fi
-if [ ${docker_registrar_port_check} -gt 0 ]; then
-    cp -p /etc/services /tmp/services.$$
-    egrep -v "Simple Remote Docker Registrar" /tmp/services.$$ > /etc/services
-    rm -f /tmp/services.$$
-fi
-service xinetd restart > /dev/null 2>&1
-service crontab restart > /dev/null 2>&1
 /bin/true
 
 %files -f /tmp/MANIFEST.%{name}
